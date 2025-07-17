@@ -1,54 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { z } from 'zod'
 
-const UpdateMaterialSchema = z.object({
-  id: z.string(),
-  priceNGN: z.number().min(0)
-})
+const mockMaterials = [
+  { id: '1', item: 'CEMENT', unit: '50kg bag', priceNGN: 8500, location: 'NATIONAL', updatedAt: new Date().toISOString() },
+  { id: '2', item: 'BLOCKS_9INCH', unit: 'piece', priceNGN: 320, location: 'NATIONAL', updatedAt: new Date().toISOString() },
+  { id: '3', item: 'SAND', unit: '20 tonnes', priceNGN: 45000, location: 'NATIONAL', updatedAt: new Date().toISOString() }
+]
 
 export async function GET() {
-  try {
-    const materials = await prisma.materialPrice.findMany({
-      orderBy: { item: 'asc' }
-    })
-    
-    return NextResponse.json(materials)
-  } catch (error) {
-    console.error('Error fetching materials:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch materials' },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json(mockMaterials)
 }
 
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
     
-    // Validate input
-    const validatedData = UpdateMaterialSchema.parse(body)
-    
-    const updatedMaterial = await prisma.materialPrice.update({
-      where: { id: validatedData.id },
-      data: { 
-        priceNGN: validatedData.priceNGN,
-        updatedAt: new Date()
-      }
+    // For now, just return success
+    return NextResponse.json({
+      id: body.id,
+      priceNGN: body.priceNGN,
+      updatedAt: new Date().toISOString()
     })
-    
-    return NextResponse.json(updatedMaterial)
   } catch (error) {
     console.error('Error updating material:', error)
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input data', details: error.errors },
-        { status: 400 }
-      )
-    }
-    
     return NextResponse.json(
       { error: 'Failed to update material' },
       { status: 500 }
