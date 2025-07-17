@@ -1,0 +1,122 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projects Project[]
+  accounts Account[]
+  sessions Session[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Project {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  area      Float
+  location  String
+  finish    String
+  totalCost Float
+  lowCost   Float
+  highCost  Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  costItems CostItem[]
+
+  @@map("projects")
+}
+
+model CostItem {
+  id        String  @id @default(cuid())
+  projectId String
+  category  String
+  item      String
+  unitCost  Float
+  quantity  Float
+  total     Float
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("cost_items")
+}
+
+model MaterialPrice {
+  id        String   @id @default(cuid())
+  item      String   @unique
+  unit      String
+  priceNGN  Float
+  location  String   @default("NATIONAL")
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("material_prices")
+}
+
+model LocationMultiplier {
+  id         String @id @default(cuid())
+  location   String @unique
+  multiplier Float
+
+  @@map("location_multipliers")
+}
+
+model ConstructionRate {
+  id      String @id @default(cuid())
+  finish  String @unique
+  rateNGN Float
+
+  @@map("construction_rates")
+}
+
+enum Role {
+  USER
+  ADMIN
+}

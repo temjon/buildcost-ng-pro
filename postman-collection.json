@@ -1,0 +1,143 @@
+{
+  "info": {
+    "name": "BuildCost NG Pro API",
+    "description": "API collection for BuildCost NG Pro - Nigerian Construction Cost Estimator",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Cost Estimation",
+      "item": [
+        {
+          "name": "Calculate Estimate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"area\": 150,\n  \"location\": \"LAGOS\",\n  \"finish\": \"MEDIUM\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/estimate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "estimate"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate PDF Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estimate\": {\n    \"total\": 45000000,\n    \"low\": 40500000,\n    \"high\": 49500000,\n    \"items\": [],\n    \"materials\": [],\n    \"confidence\": 0.9\n  },\n  \"projectDetails\": {\n    \"area\": 150,\n    \"location\": \"LAGOS\",\n    \"finish\": \"MEDIUM\",\n    \"date\": \"2025-01-17\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pdf"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Get Projects",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"3-Bedroom Duplex Lagos\",\n  \"area\": 150,\n  \"location\": \"LAGOS\",\n  \"finish\": \"MEDIUM\",\n  \"totalCost\": 45000000,\n  \"lowCost\": 40500000,\n  \"highCost\": 49500000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Get Material Prices",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/materials",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "materials"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Material Price",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"material-id-here\",\n  \"priceNGN\": 9000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/materials",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "materials"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}
