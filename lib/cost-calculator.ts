@@ -1,5 +1,3 @@
-import { prisma } from './prisma'
-
 export interface CostEstimate {
   total: number
   low: number
@@ -32,40 +30,36 @@ export interface EstimateInput {
 }
 
 export class CostCalculator {
-  private static readonly INFLATION_FACTOR = 1.348 // 34.8% CBN Dec 2024
-  private static readonly MONTE_CARLO_ITERATIONS = 1000
+  private static readonly CONSTRUCTION_RATES = {
+    BASIC: 161460,
+    MEDIUM: 242190,
+    LUXURY: 322920
+  }
+
+  private static readonly LOCATION_MULTIPLIERS = {
+    LAGOS: 1.25,
+    ABUJA: 1.20,
+    PORT_HARCOURT: 1.15,
+    ENUGU: 1.10,
+    RURAL: 1.00
+  }
 
   static async calculateEstimate(input: EstimateInput): Promise<CostEstimate> {
     // Get base construction rate
-    const constructionRate = await prisma.constructionRate.findUnique({
-      where: { finish: input.finish }
-    })
+    const baseRate = this.CONSTRUCTION_RATES[input.finish as keyof typeof this.CONSTRUCTION_RATES] || 242190
     
-    if (!constructionRate) {
-      throw new Error(`Construction rate not found for finish: ${input.finish}`)
-    }
-
     // Get location multiplier
-    const locationMultiplier = await prisma.locationMultiplier.findUnique({
-      where: { location: input.location }
-    })
+    const locationMultiplier = this.LOCATION_MULTIPLIERS[input.location as keyof typeof this.LOCATION_MULTIPLIERS] || 1.0
     
-    if (!locationMultiplier) {
-      throw new Error(`Location multiplier not found for: ${input.location}`)
-    }
-
     // Calculate base cost
-    const baseCostPerSqm = constructionRate.rateNGN * locationMultiplier.multiplier
+    const baseCostPerSqm = baseRate * locationMultiplier
     const baseTotalCost = baseCostPerSqm * input.area
 
-    // Get material prices for detailed breakdown
-    const materials = await prisma.materialPrice.findMany()
-    
     // Calculate detailed cost breakdown
-    const costBreakdown = this.calculateDetailedBreakdown(input, baseCostPerSqm, materials)
+    const costBreakdown = this.calculateDetailedBreakdown(input, baseCostPerSqm)
     
     // Run Monte Carlo simulation for uncertainty analysis
-    const monteCarloResults = this.runMonteCarloSimulation(baseTotalCost, this.MONTE_CARLO_ITERATIONS)
+    const monteCarloResults = this.runMonteCarloSimulation(baseTotalCost, 1000)
     
     return {
       total: Math.round(baseTotalCost),
@@ -73,15 +67,11 @@ export class CostCalculator {
       high: Math.round(monteCarloResults.percentile95),
       items: costBreakdown.items,
       materials: costBreakdown.materials,
-      confidence: 0.9 // 90% confidence interval
+      confidence: 0.9
     }
   }
 
-  private static calculateDetailedBreakdown(
-    input: EstimateInput, 
-    baseCostPerSqm: number, 
-    materials: any[]
-  ) {
+  private static calculateDetailedBreakdown(input: EstimateInput, baseCostPerSqm: number) {
     const items: CostBreakdown[] = []
     const materialBreakdown: MaterialBreakdown[] = []
 
@@ -135,36 +125,32 @@ export class CostCalculator {
       total: servicesCost
     })
 
-    // Calculate material quantities based on area
-    const cementBags = Math.ceil(input.area * 2.5) // 2.5 bags per sqm average
-    const blocks = Math.ceil(input.area * 45) // 45 blocks per sqm average
-    const sandTonnes = Math.ceil(input.area * 0.15) // 0.15 tonnes per sqm
-    
-    const cementPrice = materials.find(m => m.item === 'CEMENT')?.priceNGN || 8500
-    const blockPrice = materials.find(m => m.item === 'BLOCKS_9INCH')?.priceNGN || 320
-    const sandPrice = materials.find(m => m.item === 'SAND')?.priceNGN || 45000
+    // Calculate material quantities
+    const cementBags = Math.ceil(input.area * 2.5)
+    const blocks = Math.ceil(input.area * 45)
+    const sandTonnes = Math.ceil(input.area * 0.15)
 
     materialBreakdown.push(
       {
         item: 'Cement',
         unit: '50kg bags',
         quantity: cementBags,
-        unitPrice: cementPrice,
-        total: cementBags * cementPrice
+        unitPrice: 8500,
+        total: cementBags * 8500
       },
       {
         item: '9-inch Blocks',
         unit: 'pieces',
         quantity: blocks,
-        unitPrice: blockPrice,
-        total: blocks * blockPrice
+        unitPrice: 320,
+        total: blocks * 320
       },
       {
         item: 'Sharp Sand',
         unit: 'tonnes',
         quantity: sandTonnes,
-        unitPrice: sandPrice / 20, // Price per tonne
-        total: sandTonnes * (sandPrice / 20)
+        unitPrice: 2250,
+        total: sandTonnes * 2250
       }
     )
 
@@ -175,14 +161,9 @@ export class CostCalculator {
     const results: number[] = []
     
     for (let i = 0; i < iterations; i++) {
-      // Material volatility ±15%
-      const materialVariation = 1 + (Math.random() - 0.5) * 0.3 // ±15%
-      
-      // Labour volatility ±10%
-      const labourVariation = 1 + (Math.random() - 0.5) * 0.2 // ±10%
-      
-      // Market conditions ±5%
-      const marketVariation = 1 + (Math.random() - 0.5) * 0.1 // ±5%
+      const materialVariation = 1 + (Math.random() - 0.5) * 0.3
+      const labourVariation = 1 + (Math.random() - 0.5) * 0.2
+      const marketVariation = 1 + (Math.random() - 0.5) * 0.1
       
       const simulatedCost = baseCost * materialVariation * labourVariation * marketVariation
       results.push(simulatedCost)
